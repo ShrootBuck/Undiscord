@@ -4,6 +4,7 @@
 
 # Imports
 
+import json
 import time
 from zipfile import ZipFile
 from tkinter import filedialog
@@ -47,13 +48,14 @@ def PromptFileUpload(
     )
 
 
-def ExtractZip(FileName, Destination=None, Password=None):
-    with ZipFile(FileName, "r") as ZipObject:
-        ZipObject.extractall(Destination, None, Password)
+def ReadFromZip(ZipName, FileName):
+    with ZipFile(ZipName) as ZipObject:
+        with ZipObject.open(FileName) as MyFile:
+            return MyFile.read()
 
 
 # Get the Auth Token
-AuthorizationToken = Debug("Enter your Discord authorization token:", "OPTIONS", True)
+AuthorizationToken = Debug("Enter your Discord authorization token:\t", "OPTIONS", True)
 
 
 # Attempt to convert it to an integer-represented value
@@ -62,7 +64,7 @@ IntParseSuccess = False  # I know, bad way of handling this, don't talk to me ab
 
 while IntParseSuccess == False:
     UserSelection = Debug(
-        "From where should Undiscord delete messages?\n\t\t[1]:\tAll\n\t\t[2]:\tServers\n\t\t[3]:\tDMs\n\t\t[4]:\tNone\n:",
+        "From where should Undiscord delete messages?\n\t\t[1]:\tAll\n\t\t[2]:\tServers\n\t\t[3]:\tDMs\n\t\t[4]:\tNone\n:\t",
         "OPTIONS",
         True,
     )
@@ -80,18 +82,41 @@ while IntParseSuccess == False:
 
 
 # Unzip the data package
-Debug("Please import your Discord data package.", "OPTIONS", False)
-time.sleep(1)  # Funky
-ArchivePath = PromptFileUpload(
-    [("ZIP Files", "*.zip")], "Please import your Discord data package."
-)
 
-try:
-    ExtractZip(ArchivePath, "temp")
-except Exception as e:
-    print(e)
+ZipReadFailure = True
+MessageIndexJSON = "I do a little trolling."
 
-time.sleep(10)
+# Ensure auto-retry
+while ZipReadFailure:
+    try:
+        Debug("Please import your Discord data package.", "OPTIONS", False)
+        ArchivePath = PromptFileUpload(
+            [("ZIP Files", "*.zip")], "Please import your Discord data package."
+        )
+        MessageIndexJSON = ReadFromZip(ArchivePath, "messages/index.json")
+        ZipReadFailure = False
+
+    except Exception as ReadZIPException:
+        Debug(ReadZIPException, "ERROR", False)
+        ZipReadFailure = True  # Shouldn't be necessary, but good practice
+
+MessageIndex = json.loads(MessageIndexJSON)
+
+# Get the channels to purge
+Channels = {"DM": [], "Server": []}
+
+# DMs
+for Index in MessageIndex:
+    if MessageIndex[Index].startswith("Direct Message with"):
+        Channels["DM"].append(Index)
+    else:
+        # Server
+        Channels["Server"].append(Index)
+
+
+# DM fetch: https://discord.com/api/v9/channels/ChannelID/messages?limit=100
+
+
 match UserSelection:
     case 2:
         print("e")
