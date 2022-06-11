@@ -144,7 +144,7 @@ def QueryChannelMessages(ID, IsServer=True):
 
     # Begin querying
     try:
-        while "WOAH" == "WOAH":
+        while "WOAH" == "WOAH":  # So that VSCode doesn't detect unreachable code
             if IsServer == True:
                 QueryURL = f"https://discord.com/api/v9/guilds/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
             else:
@@ -173,7 +173,32 @@ def QueryChannelMessages(ID, IsServer=True):
     return Messages
 
 
-AmountDeleted = 0
+Logs = {
+    "AmountDeleted": 0,
+}
+
+
+def DeleteMessage(MessageID, ChannelID):
+    try:
+        while True:
+            DeleteRequest = MainSession.delete(
+                f"https://discord.com/api/v9/channels/{ChannelID}/messages/{MessageID}"
+            )
+
+            match DeleteRequest.status_code:
+                case 204:  # Success
+                    Logs["AmountDeleted"] += 1
+                    raise BreakNestedLoop
+                case 403:  # No access anymore
+                    Debug(
+                        f"No access to channel {Message['channel_id']} in server {Server}"
+                    )
+                    raise BreakNestedLoop
+                case 429:  # Ratelimit
+                    if "retry_after" in DeleteRequest.json().keys():
+                        time.sleep(int(DeleteRequest.json()["retry_after"]))
+    except BreakNestedLoop:
+        pass
 
 
 match UserSelection:
@@ -183,28 +208,19 @@ match UserSelection:
             ServerMessages = QueryChannelMessages(Server, True)
 
             for Message in ServerMessages:
-                try:
-                    while True:
-                        DeleteRequest = MainSession.delete(
-                            f"https://discord.com/api/v9/channels/{Message['channel_id']}/messages/{Message['id']}"
-                        )
-
-                        match DeleteRequest.status_code:
-                            case 204:  # Success
-                                AmountDeleted += 1
-                                raise BreakNestedLoop
-                            case 403:  # No access anymore
-                                Debug(
-                                    f"No access to channel {Message['channel_id']} in server {Server}"
-                                )
-                                raise BreakNestedLoop
-                            case 429:  # Ratelimit
-                                if "retry_after" in DeleteRequest.json().keys():
-                                    time.sleep(int(DeleteRequest.json()["retry_after"]))
-                except BreakNestedLoop:
-                    pass
+                DeleteMessage(Message["id"], Message["channel_id"])
 
             Debug(f"Finished clearing messages in server {Server}")
 
+    case 2:  # DMs
+
+        for DM in Channels["DM"]:
+            ChannelMessages = QueryChannelMessages(DM, False)
+
+            for Message in ChannelMessages:
+                DeleteMessage(Message["id"], Message["channel_id"])
+
+            Debug(f"Finished clearing messages in DM channel {DM}")
+
 ClearConsole()
-Debug(f"Deleted {AmountDeleted} messages!", "DEBUG", True)
+Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
