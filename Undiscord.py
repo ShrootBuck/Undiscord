@@ -90,6 +90,14 @@ while IntParseSuccess == False:
         )
 
 
+
+DeletePinned = Debug(
+        "Delete pinned messages? (y/n)",
+        "OPTIONS",
+        True,
+    ) == "y"
+
+
 # Unzip the data package
 
 ZipReadFailure = True
@@ -178,11 +186,15 @@ Logs = {
 }
 
 
-def DeleteMessage(MessageID, ChannelID):
+def DeleteMessage(Message):
     try:
         while True:
+
+            if Message["pinned"] and not DeletePinned:
+                raise BreakNestedLoop
+
             DeleteRequest = MainSession.delete(
-                f"https://discord.com/api/v9/channels/{ChannelID}/messages/{MessageID}"
+                f"https://discord.com/api/v9/channels/{Message['channel_id']}/messages/{Message['id']}"
             )
 
             match DeleteRequest.status_code:
@@ -208,7 +220,7 @@ match UserSelection:
             ServerMessages = QueryChannelMessages(Server, True)
 
             for Message in ServerMessages:
-                DeleteMessage(Message["id"], Message["channel_id"])
+                DeleteMessage(Message)
 
             Debug(f"Finished clearing messages in server {Server}")
 
@@ -218,7 +230,7 @@ match UserSelection:
             ChannelMessages = QueryChannelMessages(DM, False)
 
             for Message in ChannelMessages:
-                DeleteMessage(Message["id"], Message["channel_id"])
+                DeleteMessage(Message)
 
             Debug(f"Finished clearing messages in DM channel {DM}")
 
