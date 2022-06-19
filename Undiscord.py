@@ -21,7 +21,7 @@ def Debug(Message, Prefix="DEBUG", IsInput=False):
 
     # Behavior determined on whether it's an input or not
     if IsInput:
-        return input(FormattedMessage)
+        return input(FormattedMessage + ":\t")
     else:
         print(FormattedMessage)
 
@@ -56,11 +56,11 @@ def ReadFromZip(ZipName, FileName):
 
 
 # Get the Auth Token
-AuthorizationToken = Debug("Enter your Discord authorization token: ", "OPTIONS", True)
+AuthorizationToken = Debug("Enter your Discord authorization token", "OPTIONS", True)
 
 
 # Get the User ID
-UserID = Debug("Enter your Discord user ID: ", "OPTIONS", True)
+UserID = Debug("Enter your Discord user ID", "OPTIONS", True)
 
 
 # Session
@@ -74,7 +74,7 @@ IntParseSuccess = False  # I know, bad way of handling this, don't talk to me ab
 
 while IntParseSuccess == False:
     UserSelection = Debug(
-        "From where should Undiscord delete messages?\n\t\t[1]:\tServers\n\t\t[2]:\tDMs\n:\t",
+        "From where should Undiscord delete messages?\n\t\t[1]:\tServers\n\t\t[2]:\tDMs\n",
         "OPTIONS",
         True,
     )
@@ -203,7 +203,7 @@ def DeleteMessage(Message):
                     raise BreakNestedLoop
                 case 403:  # No access anymore
                     Debug(
-                        f"No access to channel {Message['channel_id']} in server {Server}"
+                        f"No access to channel {Message['channel_id']} in server {Server}."
                     )
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
@@ -222,7 +222,7 @@ match UserSelection:
             for Message in ServerMessages:
                 DeleteMessage(Message)
 
-            Debug(f"Finished clearing messages in server {Server}")
+            Debug(f"Finished clearing messages in server {Server}.")
 
     case 2:  # DMs
 
@@ -232,7 +232,7 @@ match UserSelection:
             for Message in ChannelMessages:
                 DeleteMessage(Message)
 
-            Debug(f"Finished clearing messages in DM channel {DM}")
+            Debug(f"Finished clearing messages in DM channel {DM}.")
 
 ClearConsole()
 Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
