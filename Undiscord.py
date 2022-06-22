@@ -131,7 +131,10 @@ Channels = {"DM": [], "Server": []}
 ChannelsToPurge = []
 
 # DMs
+
 for Index in MessageIndex:
+    if MessageIndex[Index] == None:
+        continue # Not this channel
     if MessageIndex[Index].startswith("Direct Message with"):
         Channels["DM"].append(Index)
 
