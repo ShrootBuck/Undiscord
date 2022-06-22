@@ -6,5 +6,7 @@ A tool to delete all of your Discord messages.
 2. Run the program and enjoy!
 
 # Helpful Info
+- Undiscord can only purge messages in channels that you can currently view
+  - Doesn't apply to DMs and Group Chats
 - [To get your User ID](https://support.discord.com/hc/en-us/articles/206346498)
 - [To get your authorization token](https://discordhelp.net/discord-token)
