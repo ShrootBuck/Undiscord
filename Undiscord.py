@@ -35,6 +35,7 @@ def ClearConsole():
     Command = "clear"
     if os.name in ("nt", "dos"):  # Windows uses cls
         Command = "cls"
+
     # Execute command
     os.system(Command)
 
@@ -43,7 +44,7 @@ def PromptFileUpload(
     AllowedFiles, Title="Please select a file.", InitialDirectory=os.getcwd()
 ):
     Root = Tkinter.Tk()
-    Root.withdraw()  # We don't actually need a UI from TK
+    Root.withdraw()  # We don't actually need a UI from TKinter
     return filedialog.askopenfilename(
         initialdir=InitialDirectory, title=Title, filetypes=AllowedFiles
     )
@@ -63,14 +64,14 @@ AuthorizationToken = Debug("Enter your Discord authorization token", "OPTIONS", 
 UserID = Debug("Enter your Discord user ID", "OPTIONS", True)
 
 
-# Session
+# Session for a persistent token
 MainSession = requests.session()
 MainSession.headers = {"authorization": AuthorizationToken}
 
 
 # Attempt to convert it to an integer-represented value
 UserSelection = None
-IntParseSuccess = False  # I know, bad way of handling this, don't talk to me about it
+IntParseSuccess = False
 
 while IntParseSuccess == False:
     UserSelection = Debug(
@@ -83,28 +84,17 @@ while IntParseSuccess == False:
         UserSelection = int(UserSelection)
         IntParseSuccess = True
     except ValueError:
-        Debug(
-            "Please select a valid option!",
-            "ERROR",
-            False,
-        )
+        Debug("Please select a valid option!", "ERROR", False)
 
 
-DeletePinned = (
-    Debug(
-        "Delete pinned messages? (y/n)",
-        "OPTIONS",
-        True,
-    )
-    == "y"
-)
+DeletePinned = Debug("Delete pinned messages? (y/n)", "OPTIONS", True) == "y"
 
 
 # Unzip the data package
 
 ZipReadFailure = True
 MessageIndexJSON = "I do a little trolling."
-CurrentServerListJSON = "I do a little trolling."  # Used later
+CurrentServerListJSON = "I do a little trolling."
 
 # Ensure auto-retry
 while ZipReadFailure:
@@ -137,6 +127,7 @@ ChannelsToPurge = []
 for Index in MessageIndex:
     if MessageIndex[Index] == None:
         continue  # Not this channel
+
     if MessageIndex[Index].startswith("Direct Message with"):
         Channels["DM"].append(Index)
 
@@ -151,54 +142,51 @@ class BreakNestedLoop(Exception):
     pass
 
 
-def QueryChannelMessages(ID, IsServer=True):
-    Messages = []
-    Data = {"Offset": 0}
+def QueryChannelMessages(ID):
+    Data = {"Offset": 0, "Messages": [], "QueryURL": "", "ChannelType": "guilds"}
 
     # Begin querying
     try:
         while "WOAH" == "WOAH":  # So that VSCode doesn't detect unreachable code
-            if IsServer == True:
-                Data[
-                    "QueryURL"
-                ] = f"https://discord.com/api/v9/guilds/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
-            else:
-                Data[
-                    "QueryURL"
-                ] = f"https://discord.com/api/v9/channels/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
+            Data[
+                "QueryURL"
+            ] = f"https://discord.com/api/v9/{Data['ChannelType']}/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
+
             Query = MainSession.get(Data["QueryURL"])
+
             match Query.status_code:
                 case 200:
                     # Save messages
-                    for Message in Query.json()["messages"]:
-                        Messages.append(Message[0])
+                    Data["Messages"].extend(Query.json()["messages"])
 
                     # If we're done
-                    if len(Query.json()["messages"]) < 25:
+                    if len(Data["Messages"]) == Query.json()["total_results"]:
                         raise BreakNestedLoop
                     else:
                         Data["Offset"] += 25
                 case 202:  # Channel needs to index
                     time.sleep(2)
+                case 400:  # Change type
+                    Data[
+                        "ChannelType"
+                    ] = "channels"  # Group DMs are initially marked as SERVERS
                 case 403:  # No access to channel
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
-                    if "retry_after" in Query.json().keys():
-                        time.sleep(int(Query.json()["retry_after"]))
+                    time.sleep(int(Query.json()["retry_after"]))
     except BreakNestedLoop:
         pass
-    return Messages
+    return Data["Messages"]
 
 
-Logs = {
-    "AmountDeleted": 0,
-}
+Logs = {"AmountDeleted": 0}
 
 
 def DeleteMessage(Message):
+    Message = Message[0]
     try:
         while True:
-            if Message["pinned"] and DeletePinned == False:
+            if Message["pinned"] and not DeletePinned:
                 raise BreakNestedLoop
 
             DeleteRequest = MainSession.delete(
@@ -211,7 +199,7 @@ def DeleteMessage(Message):
                     raise BreakNestedLoop
                 case 403:  # No access anymore
                     Debug(
-                        f"No access to channel {Message['channel_id']} in server {CurrentServerList[Server]}."
+                        f"No access to channel {Message['channel_id']} in {CurrentServerList[Server]}."
                     )
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
@@ -225,17 +213,18 @@ match UserSelection:
     case 1:  # Servers
 
         for Server in Channels["Server"]:
-            ServerMessages = QueryChannelMessages(Server, True)
+
+            ServerMessages = QueryChannelMessages(Server)
 
             for Message in ServerMessages:
                 DeleteMessage(Message)
 
-            Debug(f"Finished clearing messages in server {Server}.")
+            Debug(f"Finished clearing messages in {CurrentServerList[Server]}.")
 
     case 2:  # DMs
 
         for DM in Channels["DM"]:
-            ChannelMessages = QueryChannelMessages(DM, False)
+            ChannelMessages = QueryChannelMessages(DM)
 
             for Message in ChannelMessages:
                 DeleteMessage(Message)
