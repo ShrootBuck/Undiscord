@@ -90,12 +90,14 @@ while IntParseSuccess == False:
         )
 
 
-
-DeletePinned = Debug(
+DeletePinned = (
+    Debug(
         "Delete pinned messages? (y/n)",
         "OPTIONS",
         True,
-    ) == "y"
+    )
+    == "y"
+)
 
 
 # Unzip the data package
@@ -119,7 +121,7 @@ while ZipReadFailure:
         ClearConsole()
 
     except Exception as ReadZIPException:
-        Debug(ReadZIPException, "ERROR", False)
+        Debug("ReadZIPException! Something went wrong.", "ERROR", False)
         ZipReadFailure = True  # Shouldn't be necessary, but good practice
 
 MessageIndex = json.loads(MessageIndexJSON)
@@ -134,7 +136,7 @@ ChannelsToPurge = []
 
 for Index in MessageIndex:
     if MessageIndex[Index] == None:
-        continue # Not this channel
+        continue  # Not this channel
     if MessageIndex[Index].startswith("Direct Message with"):
         Channels["DM"].append(Index)
 
@@ -192,8 +194,7 @@ Logs = {
 def DeleteMessage(Message):
     try:
         while True:
-
-            if Message["pinned"] and not DeletePinned:
+            if Message["pinned"] and DeletePinned == False:
                 raise BreakNestedLoop
 
             DeleteRequest = MainSession.delete(
@@ -206,14 +207,14 @@ def DeleteMessage(Message):
                     raise BreakNestedLoop
                 case 403:  # No access anymore
                     Debug(
-                        f"No access to channel {Message['channel_id']} in server {Server}."
+                        f"No access to channel {Message['channel_id']} in server {CurrentServerList[Server]}."
                     )
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
                     if "retry_after" in DeleteRequest.json().keys():
                         time.sleep(int(DeleteRequest.json()["retry_after"]))
     except BreakNestedLoop:
-        pass
+        return
 
 
 match UserSelection:
