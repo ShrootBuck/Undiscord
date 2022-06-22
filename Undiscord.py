@@ -159,10 +159,14 @@ def QueryChannelMessages(ID, IsServer=True):
     try:
         while "WOAH" == "WOAH":  # So that VSCode doesn't detect unreachable code
             if IsServer == True:
-                QueryURL = f"https://discord.com/api/v9/guilds/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
+                Data[
+                    "QueryURL"
+                ] = f"https://discord.com/api/v9/guilds/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
             else:
-                QueryURL = f"https://discord.com/api/v9/channels/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
-            Query = MainSession.get(QueryURL)
+                Data[
+                    "QueryURL"
+                ] = f"https://discord.com/api/v9/channels/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
+            Query = MainSession.get(Data["QueryURL"])
             match Query.status_code:
                 case 200:
                     # Save messages
