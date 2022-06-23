@@ -166,7 +166,7 @@ def QueryChannelMessages(ID):
                         Data["Offset"] += 25
                 case 202:  # Channel needs to index
                     time.sleep(2)
-                case 400:  # Change type
+                case 404:  # Change type
                     Data[
                         "ChannelType"
                     ] = "channels"  # Group DMs are initially marked as SERVERS
@@ -214,7 +214,10 @@ match UserSelection:
 
         for Server in Channels["Server"]:
 
+            Debug(f"Querying messages in {CurrentServerList[Server]}...")
             ServerMessages = QueryChannelMessages(Server)
+
+            Debug(f"Beginning to clear messages in {CurrentServerList[Server]}.")
 
             for Message in ServerMessages:
                 DeleteMessage(Message)
@@ -224,12 +227,17 @@ match UserSelection:
     case 2:  # DMs
 
         for DM in Channels["DM"]:
+
+            Debug(f"Querying messages in {MessageIndex[DM]}...")
             ChannelMessages = QueryChannelMessages(DM)
 
+            Debug(f"Beginning to clear messages in {MessageIndex[DM]}.")
+
             for Message in ChannelMessages:
+                Debug(f"Deleting message in {MessageIndex[DM]}.")  # TEMP
                 DeleteMessage(Message)
 
-            Debug(f"Finished clearing messages in DM channel {DM}.")
+            Debug(f"Finished clearing messages in {MessageIndex[DM]}.")
 
 ClearConsole()
 Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
