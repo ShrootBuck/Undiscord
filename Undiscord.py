@@ -5,6 +5,7 @@
 # Imports
 
 import json
+import math
 import requests
 import time
 from zipfile import ZipFile
@@ -163,15 +164,21 @@ def QueryChannelMessages(ID):
                     else:
                         Data["Offset"] += 25
                 case 202:  # Channel needs to index
-                    time.sleep(2)
+                    Debug("Waiting 5 seconds for channel to index.")
+                    time.sleep(5)
                 case 404:  # Change type
                     Data[
                         "ChannelType"
                     ] = "channels"  # Group DMs are initially marked as SERVERS
-                case 403:  # No access to channel
-                    raise BreakNestedLoop
+                case 403:  # No access anymore
+                    Debug(
+                        f"No access to channel {Message['channel_id']} in {CurrentServerList[Server]}."
+                    )
                 case 429:  # Ratelimit
-                    time.sleep(int(Query.json()["retry_after"]))
+                    if "retry_after" in Query.json().keys():
+                        RetryAfter = math.ceil(Query.json()["retry_after"])
+                        Debug(f"Pausing for {RetryAfter} seconds.", "RATE-LIMIT")
+                        time.sleep(int(RetryAfter))
     except BreakNestedLoop:
         pass
     return Data["Messages"]
@@ -194,6 +201,7 @@ def DeleteMessage(Message):
             match DeleteRequest.status_code:
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
+                    Debug(f"Deleted message in {MessageIndex['channel_id']}.")
                     raise BreakNestedLoop
                 case 403:  # No access anymore
                     Debug(
@@ -202,7 +210,9 @@ def DeleteMessage(Message):
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
                     if "retry_after" in DeleteRequest.json().keys():
-                        time.sleep(int(DeleteRequest.json()["retry_after"]))
+                        RetryAfter = math.ceil(DeleteRequest.json()["retry_after"])
+                        Debug(f"Pausing for {RetryAfter} seconds.", "RATE-LIMIT")
+                        time.sleep(int(RetryAfter))
     except BreakNestedLoop:
         return
 
@@ -232,9 +242,9 @@ match UserSelection:
             Debug(f"Beginning to clear messages in {MessageIndex[DM]}.")
 
             for Message in ChannelMessages:
-                Debug(f"Deleting message in {MessageIndex[DM]}.")  # TEMP
                 DeleteMessage(Message)
 
             Debug(f"Finished clearing messages in {MessageIndex[DM]}.")
+
 
 Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
