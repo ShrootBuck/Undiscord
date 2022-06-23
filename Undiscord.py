@@ -177,7 +177,7 @@ def QueryChannelMessages(ID):
                 case 429:  # Ratelimit
                     if "retry_after" in Query.json().keys():
                         RetryAfter = math.ceil(Query.json()["retry_after"])
-                        Debug(f"Pausing for {RetryAfter} seconds.", "RATE-LIMIT")
+                        Debug(f"Pausing for {RetryAfter} seconds...", "RATE-LIMIT")
                         time.sleep(int(RetryAfter))
     except BreakNestedLoop:
         pass
@@ -201,7 +201,7 @@ def DeleteMessage(Message):
             match DeleteRequest.status_code:
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
-                    Debug(f"Deleted message in {MessageIndex['channel_id']}.")
+                    Debug(f"Deleted message in {MessageIndex[Message['channel_id']]}.")
                     raise BreakNestedLoop
                 case 403:  # No access anymore
                     Debug(
@@ -211,7 +211,7 @@ def DeleteMessage(Message):
                 case 429:  # Ratelimit
                     if "retry_after" in DeleteRequest.json().keys():
                         RetryAfter = math.ceil(DeleteRequest.json()["retry_after"])
-                        Debug(f"Pausing for {RetryAfter} seconds.", "RATE-LIMIT")
+                        Debug(f"Pausing for {RetryAfter} seconds...", "RATE-LIMIT")
                         time.sleep(int(RetryAfter))
     except BreakNestedLoop:
         return
