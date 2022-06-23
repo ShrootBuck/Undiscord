@@ -31,7 +31,7 @@ def HangProcess():
         time.sleep(1000)
 
 
-def ClearConsole():
+def ClearConsole():  # Here in case I ever want to clean up this program's runtime appearance
     Command = "clear"
     if os.name in ("nt", "dos"):  # Windows uses cls
         Command = "cls"
@@ -107,8 +107,6 @@ while ZipReadFailure:
         CurrentServerListJSON = ReadFromZip(ArchivePath, "servers/index.json")
 
         ZipReadFailure = False
-
-        ClearConsole()
 
     except Exception as ReadZIPException:
         Debug("ReadZIPException! Something went wrong.", "ERROR", False)
@@ -239,5 +237,4 @@ match UserSelection:
 
             Debug(f"Finished clearing messages in {MessageIndex[DM]}.")
 
-ClearConsole()
 Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
