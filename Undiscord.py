@@ -171,9 +171,7 @@ def QueryChannelMessages(ID):
                         "ChannelType"
                     ] = "channels"  # Group DMs are initially marked as SERVERS
                 case 403:  # No access anymore
-                    Debug(
-                        f"No access to channel {Message['channel_id']} in {CurrentServerList[ID]}."
-                    )
+                    Debug(f"No access to channel {Message['channel_id']}.")
                 case 429:  # Ratelimit
                     if "retry_after" in Query.json().keys():
                         RetryAfter = math.ceil(Query.json()["retry_after"])
@@ -205,7 +203,7 @@ def DeleteMessage(Message):
                     raise BreakNestedLoop
                 case 403:  # No access anymore
                     Debug(
-                        f"No access to channel {Message['channel_id']} in {CurrentServerList[Message['channel_id']]}."
+                        f"No access to channel {Message['channel_id']} in {MessageIndex[Message['channel_id']]}."
                     )
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
