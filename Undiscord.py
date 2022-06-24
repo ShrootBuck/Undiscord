@@ -171,7 +171,7 @@ def QueryChannelMessages(ID):
             ] = f"https://discord.com/api/v9/{Data['ChannelType']}/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
 
             Query = MainSession.get(Data["QueryURL"])
-            print(Query.status_code, Data["QueryURL"], Query.text)
+
             match Query.status_code:
                 case 200:
                     # Save messages
