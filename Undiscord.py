@@ -16,6 +16,9 @@ import os
 
 # Functions
 
+SendWebhook = False
+WebhookURL = ""
+
 
 def Debug(Message, Prefix="DEBUG", IsInput=False):
     FormattedMessage = "[" + Prefix + "]:\t" + Message
@@ -25,6 +28,18 @@ def Debug(Message, Prefix="DEBUG", IsInput=False):
         return input(FormattedMessage + ":\t")
     else:
         print(FormattedMessage)
+        if SendWebhook == True:
+            try:
+                requests.post(
+                    "https://shroot.cloud/api/WebhookProxy?url=" + WebhookURL,
+                    data={
+                        "content": FormattedMessage,
+                        "username": "Undiscord",
+                        "avatar_url": "https://raw.githubusercontent.com/ShrootBuck/Undiscord/main/DiscordLogo.png",
+                    },
+                )
+            except:
+                pass
 
 
 def HangProcess():
@@ -89,6 +104,9 @@ while IntParseSuccess == False:
 
 
 DeletePinned = Debug("Delete pinned messages? (y/n)", "OPTIONS", True) == "y"
+
+WebhookURL = Debug("Enter a webhook URL, or leave blank for none", "OPTIONS", True)
+SendWebhook = WebhookURL.strip() != ""
 
 
 # Unzip the data package
@@ -171,7 +189,17 @@ def QueryChannelMessages(ID):
                         "ChannelType"
                     ] = "channels"  # Group DMs are initially marked as SERVERS
                 case 403:  # No access anymore
-                    Debug(f"No access to channel {Message['channel_id']}.")
+
+                    ResponseCode = Query.json()["code"]
+
+                    match ResponseCode:
+                        case 50021:  # System message
+                            pass
+                        case 50001:  # Missing access
+                            Debug(f"No access to channel {Message['channel_id']}.")
+
+                    raise BreakNestedLoop
+
                 case 429:  # Ratelimit
                     if "retry_after" in Query.json().keys():
                         RetryAfter = math.ceil(Query.json()["retry_after"])
@@ -202,9 +230,13 @@ def DeleteMessage(Message):
                     Debug(f"Deleted message in {MessageIndex[Message['channel_id']]}.")
                     raise BreakNestedLoop
                 case 403:  # No access anymore
-                    Debug(
-                        f"No access to channel {Message['channel_id']} in {MessageIndex[Message['channel_id']]}."
-                    )
+
+                    ResponseCode = DeleteRequest.json()["code"]
+
+                    match ResponseCode:
+                        case 50001:  # Missing access
+                            Debug(f"No access to channel {Message['channel_id']}.")
+
                     raise BreakNestedLoop
                 case 429:  # Ratelimit
                     if "retry_after" in DeleteRequest.json().keys():
