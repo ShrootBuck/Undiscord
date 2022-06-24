@@ -28,18 +28,19 @@ def Debug(Message, Prefix="DEBUG", IsInput=False):
         return input(FormattedMessage + ":\t")
     else:
         print(FormattedMessage)
-        if SendWebhook == True:
-            try:
-                requests.post(
-                    "https://shroot.cloud/api/WebhookProxy?url=" + WebhookURL,
-                    data={
-                        "content": FormattedMessage,
-                        "username": "Undiscord",
-                        "avatar_url": "https://raw.githubusercontent.com/ShrootBuck/Undiscord/main/DiscordLogo.png",
-                    },
-                )
-            except:
-                pass
+
+    if SendWebhook == True:
+        try:
+            requests.post(
+                "https://shroot.cloud/api/WebhookProxy?url=" + WebhookURL,
+                data={
+                    "content": FormattedMessage,
+                    "username": "Undiscord",
+                    "avatar_url": "https://raw.githubusercontent.com/ShrootBuck/Undiscord/main/DiscordLogo.png",
+                },
+            )
+        except:
+            pass
 
 
 def HangProcess():
