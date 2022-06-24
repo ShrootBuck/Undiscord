@@ -190,15 +190,6 @@ def QueryChannelMessages(ID):
                         "ChannelType"
                     ] = "channels"  # Group DMs are initially marked as SERVERS
                 case 403:  # No access anymore
-
-                    ResponseCode = Query.json()["code"]
-
-                    match ResponseCode:
-                        case 50021:  # System message
-                            pass
-                        case 50001:  # Missing access
-                            Debug(f"No access to channel {Message['channel_id']}.")
-
                     raise BreakNestedLoop
 
                 case 429:  # Ratelimit
@@ -228,17 +219,13 @@ def DeleteMessage(Message):
             match DeleteRequest.status_code:
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
-                    Debug(f"Deleted message in {MessageIndex[Message['channel_id']]}.")
+
+                    Debug(f"Deleted message in {MessageIndex[Message['channel_id']]}")
+
                     raise BreakNestedLoop
                 case 403:  # No access anymore
-
-                    ResponseCode = DeleteRequest.json()["code"]
-
-                    match ResponseCode:
-                        case 50001:  # Missing access
-                            Debug(f"No access to channel {Message['channel_id']}.")
-
                     raise BreakNestedLoop
+
                 case 429:  # Ratelimit
                     if "retry_after" in DeleteRequest.json().keys():
                         RetryAfter = math.ceil(DeleteRequest.json()["retry_after"])
