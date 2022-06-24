@@ -171,7 +171,7 @@ def QueryChannelMessages(ID):
             ] = f"https://discord.com/api/v9/{Data['ChannelType']}/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
 
             Query = MainSession.get(Data["QueryURL"])
-
+            print(Query.status_code, Data["QueryURL"], Query.text)
             match Query.status_code:
                 case 200:
                     # Save messages
@@ -192,11 +192,16 @@ def QueryChannelMessages(ID):
                 case 403:  # No access anymore
                     raise BreakNestedLoop
 
+                case 404:
+                    raise BreakNestedLoop
+
                 case 429:  # Ratelimit
                     if "retry_after" in Query.json().keys():
                         RetryAfter = math.ceil(Query.json()["retry_after"])
                         Debug(f"Pausing for {RetryAfter} seconds...", "RATE-LIMIT")
                         time.sleep(int(RetryAfter))
+                    else:
+                        raise BreakNestedLoop
     except BreakNestedLoop:
         pass
     return Data["Messages"]
@@ -220,10 +225,13 @@ def DeleteMessage(Message):
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
 
-                    Debug(f"Deleted message")
+                    Debug(f"Deleted message.")
 
                     raise BreakNestedLoop
                 case 403:  # No access anymore
+                    raise BreakNestedLoop
+
+                case 404:
                     raise BreakNestedLoop
 
                 case 429:  # Ratelimit
@@ -231,6 +239,8 @@ def DeleteMessage(Message):
                         RetryAfter = math.ceil(DeleteRequest.json()["retry_after"])
                         Debug(f"Pausing for {RetryAfter} seconds...", "RATE-LIMIT")
                         time.sleep(int(RetryAfter))
+                    else:
+                        raise BreakNestedLoop
     except BreakNestedLoop:
         return
 
