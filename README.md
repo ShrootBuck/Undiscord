@@ -1,6 +1,9 @@
 # Undiscord
 A tool to delete all of your Discord messages.
 
+# NOTE!
+This tool is still in development. I'm providing no guarantee that this works at the moment.
+
 # Usage
 1. Request a copy of your data and wait
 2. Run the program and enjoy!

@@ -220,7 +220,7 @@ def DeleteMessage(Message):
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
 
-                    Debug(f"Deleted message in {ChannelIndex[Message['channel_id']]}")
+                    Debug(f"Deleted message")
 
                     raise BreakNestedLoop
                 case 403:  # No access anymore
