@@ -45,7 +45,7 @@ def Debug(Message, Prefix="DEBUG", IsInput=False):
 
 def HangProcess():
     while True:
-        time.sleep(1000)
+        time.sleep(69)
 
 
 def ClearConsole():  # Here in case I ever want to clean up this program's runtime appearance
@@ -86,27 +86,13 @@ MainSession = requests.session()
 MainSession.headers = {"authorization": AuthorizationToken}
 
 
-# Attempt to convert it to an integer-represented value
-UserSelection = None
-IntParseSuccess = False
-
-while IntParseSuccess == False:
-    UserSelection = Debug(
-        "From where should Undiscord delete messages?\n\t\t[1]:\tServers\n\t\t[2]:\tDMs\n",
-        "OPTIONS",
-        True,
-    )
-    # Try parsing
-    try:
-        UserSelection = int(UserSelection)
-        IntParseSuccess = True
-    except ValueError:
-        Debug("Please select a valid option!", "ERROR", False)
-
-
 DeletePinned = Debug("Delete pinned messages? (y/n)", "OPTIONS", True) == "y"
 
-WebhookURL = Debug("Enter a webhook URL, or leave blank for none", "OPTIONS", True)
+WebhookURL = Debug(
+    "Enter a Discord webhook URL to forward the console to, or leave blank for none",
+    "OPTIONS",
+    True,
+)
 SendWebhook = WebhookURL.strip() != ""
 
 
@@ -186,9 +172,13 @@ def QueryChannelMessages(ID):
                     Debug("Waiting 5 seconds for channel to index.")
                     time.sleep(5)
                 case 404:  # Change type
-                    Data[
-                        "ChannelType"
-                    ] = "channels"  # Group DMs are initially marked as SERVERS
+
+                    if Data["ChannelType"] == "channels":
+                        raise BreakNestedLoop
+                    else:
+                        Data[
+                            "ChannelType"
+                        ] = "channels"  # Group DMs are initially marked as SERVERS
                 case 403:  # No access anymore
                     raise BreakNestedLoop
 
@@ -245,34 +235,34 @@ def DeleteMessage(Message):
         return
 
 
-match UserSelection:
-    case 1:  # Servers
+# Servers
+for Server in Channels["Server"]:
 
-        for Server in Channels["Server"]:
+    Debug(f"Sending query for messages in {CurrentServerList[Server]}.")
+    ServerMessages = QueryChannelMessages(Server)
 
-            Debug(f"Querying messages in {CurrentServerList[Server]}...")
-            ServerMessages = QueryChannelMessages(Server)
+    Debug(f"Beginning to clear messages in {CurrentServerList[Server]}.")
 
-            Debug(f"Beginning to clear messages in {CurrentServerList[Server]}.")
+    for Message in ServerMessages:
+        DeleteMessage(Message)
 
-            for Message in ServerMessages:
-                DeleteMessage(Message)
-
-            Debug(f"Finished clearing messages in {CurrentServerList[Server]}.")
-
-    case 2:  # DMs
-
-        for DM in Channels["DM"]:
-
-            Debug(f"Querying messages in {ChannelIndex[DM]}...")
-            ChannelMessages = QueryChannelMessages(DM)
-
-            Debug(f"Beginning to clear messages in {ChannelIndex[DM]}.")
-
-            for Message in ChannelMessages:
-                DeleteMessage(Message)
-
-            Debug(f"Finished clearing messages in {ChannelIndex[DM]}.")
+    Debug(f"Finished clearing messages in {CurrentServerList[Server]}.")
 
 
-Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
+# DMs
+for DM in Channels["DM"]:
+
+    Debug(f"Sending query for messages in {ChannelIndex[DM]}.")
+    ChannelMessages = QueryChannelMessages(DM)
+
+    Debug(f"Beginning to clear messages in {ChannelIndex[DM]}.")
+
+    for Message in ChannelMessages:
+        DeleteMessage(Message)
+
+    Debug(f"Finished clearing messages in {ChannelIndex[DM]}.")
+
+
+Debug(f"Deleted {Logs['AmountDeleted']} messages!")
+
+HangProcess()
