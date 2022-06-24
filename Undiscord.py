@@ -113,7 +113,7 @@ SendWebhook = WebhookURL.strip() != ""
 # Unzip the data package
 
 ZipReadFailure = True
-MessageIndexJSON = "I do a little trolling."
+ChannelIndexJSON = "I do a little trolling."
 CurrentServerListJSON = "I do a little trolling."
 
 # Ensure auto-retry
@@ -123,7 +123,7 @@ while ZipReadFailure:
         ArchivePath = PromptFileUpload(
             [("ZIP Files", "*.zip")], "Please import your Discord data package."
         )
-        MessageIndexJSON = ReadFromZip(ArchivePath, "messages/index.json")
+        ChannelIndexJSON = ReadFromZip(ArchivePath, "messages/index.json")
         CurrentServerListJSON = ReadFromZip(ArchivePath, "servers/index.json")
 
         ZipReadFailure = False
@@ -132,7 +132,7 @@ while ZipReadFailure:
         Debug("ReadZIPException! Something went wrong.", "ERROR", False)
         ZipReadFailure = True  # Shouldn't be necessary, but good practice
 
-MessageIndex = json.loads(MessageIndexJSON)
+ChannelIndex = json.loads(ChannelIndexJSON)
 CurrentServerList = json.loads(CurrentServerListJSON)
 
 # Get the channels to index
@@ -142,11 +142,11 @@ ChannelsToPurge = []
 
 # DMs
 
-for Index in MessageIndex:
-    if MessageIndex[Index] == None:
+for Index in ChannelIndex:
+    if ChannelIndex[Index] == None:
         continue  # Not this channel
 
-    if MessageIndex[Index].startswith("Direct Message with"):
+    if ChannelIndex[Index].startswith("Direct Message with"):
         Channels["DM"].append(Index)
 
 
@@ -220,7 +220,7 @@ def DeleteMessage(Message):
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
 
-                    Debug(f"Deleted message in {MessageIndex[Message['channel_id']]}")
+                    Debug(f"Deleted message in {ChannelIndex[Message['channel_id']]}")
 
                     raise BreakNestedLoop
                 case 403:  # No access anymore
@@ -254,15 +254,15 @@ match UserSelection:
 
         for DM in Channels["DM"]:
 
-            Debug(f"Querying messages in {MessageIndex[DM]}...")
+            Debug(f"Querying messages in {ChannelIndex[DM]}...")
             ChannelMessages = QueryChannelMessages(DM)
 
-            Debug(f"Beginning to clear messages in {MessageIndex[DM]}.")
+            Debug(f"Beginning to clear messages in {ChannelIndex[DM]}.")
 
             for Message in ChannelMessages:
                 DeleteMessage(Message)
 
-            Debug(f"Finished clearing messages in {MessageIndex[DM]}.")
+            Debug(f"Finished clearing messages in {ChannelIndex[DM]}.")
 
 
 Debug(f"Deleted {Logs['AmountDeleted']} messages!", "DEBUG", True)
