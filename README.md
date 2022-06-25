@@ -2,7 +2,7 @@
 A tool to delete all of your Discord messages.
 
 # NOTE!
-This tool is still in development. I'm providing no guarantee that this works at the moment.
+This tool is still in development. There may be bugs, issues, problems, and tears.
 
 # Usage
 1. Request a copy of your data and wait
