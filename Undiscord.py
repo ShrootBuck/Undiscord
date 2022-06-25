@@ -88,13 +88,6 @@ MainSession.headers = {"authorization": AuthorizationToken}
 
 DeletePinned = Debug("Delete pinned messages? (y/n)", "OPTIONS", True) == "y"
 
-WebhookURL = Debug(
-    "Enter a Discord webhook URL to forward the console to, or leave blank for none",
-    "OPTIONS",
-    True,
-)
-SendWebhook = WebhookURL.strip() != ""
-
 
 # Unzip the data package
 
@@ -124,7 +117,15 @@ CurrentServerList = json.loads(CurrentServerListJSON)
 # Get the channels to index
 Channels = {"DM": [], "Server": []}
 
-ChannelsToPurge = []
+# Webhook settings
+WebhookURL = Debug(
+    "Enter a Discord webhook URL to forward the console to, or leave blank for none",
+    "OPTIONS",
+    True,
+)
+SendWebhook = WebhookURL.strip() != ""
+
+ClearConsole()
 
 # DMs
 
