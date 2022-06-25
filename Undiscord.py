@@ -47,7 +47,7 @@ def HangProcess():
         time.sleep(69)
 
 
-def ClearConsole():  # Here in case I ever want to clean up this program's runtime appearance
+def ClearConsole():
     Command = "clear"
     if os.name in ("nt", "dos"):  # Windows uses cls
         Command = "cls"
@@ -93,6 +93,7 @@ DeletePinned = Debug("Delete pinned messages? (y/n)", "OPTIONS", True) == "y"
 ZipReadFailure = True
 ChannelIndexJSON = "I do a little trolling."
 CurrentServerListJSON = "I do a little trolling."
+ArchivePath = "I do a little trolling."
 
 # Ensure auto-retry
 while ZipReadFailure:
@@ -114,7 +115,7 @@ ChannelIndex = json.loads(ChannelIndexJSON)
 CurrentServerList = json.loads(CurrentServerListJSON)
 
 # Get the channels to index
-Channels = {"DM": [], "Server": []}
+Channels = {"DM": [], "Server": [], "GroupChat": []}
 
 # Webhook settings
 WebhookURL = Debug(
@@ -134,6 +135,13 @@ for Index in ChannelIndex:
 
     if ChannelIndex[Index].startswith("Direct Message with"):
         Channels["DM"].append(Index)
+    else:
+        ChannelData = json.loads(
+            ReadFromZip(ArchivePath, f"messages/c{str(Index)}/channel.json")
+        )
+        if ChannelData["type"] == 3:
+            Channels["DM"].append(Index)
+            Debug(Index)
 
 
 # Servers
