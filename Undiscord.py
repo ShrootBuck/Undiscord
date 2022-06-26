@@ -165,8 +165,6 @@ def QueryChannelMessages(ID):
 
             Query = MainSession.get(Data["QueryURL"])
 
-            Debug(str(Query.status_code) + "\n" + Query.text + Query.url)
-
             match Query.status_code:
                 case 200:
                     # Save messages
