@@ -57,7 +57,7 @@ def ClearConsole():
 
 
 def PromptFileUpload(
-    AllowedFiles, Title="Please select a file.", InitialDirectory=os.getcwd()
+    AllowedFiles, Title="Please select a file.", InitialDirectory=os.get_exec_path()
 ):
     Root = Tkinter.Tk()
     Root.withdraw()  # We don't actually need a UI from TKinter
@@ -141,7 +141,6 @@ for Index in ChannelIndex:
         )
         if ChannelData["type"] == 3:
             Channels["DM"].append(Index)
-            Debug(Index)
 
 
 # Servers
@@ -165,6 +164,8 @@ def QueryChannelMessages(ID):
             ] = f"https://discord.com/api/v9/{Data['ChannelType']}/{ID}/messages/search?author_id={UserID}&offset={str(Data['Offset'])}"
 
             Query = MainSession.get(Data["QueryURL"])
+
+            Debug(str(Query.status_code) + "\n" + Query.text + "\n" + Query.url)
 
             match Query.status_code:
                 case 200:
