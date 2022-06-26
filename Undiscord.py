@@ -154,7 +154,7 @@ class BreakNestedLoop(Exception):
 
 
 def QueryChannelMessages(ID):
-    Data = {"Offset": 0, "Messages": [], "QueryURL": "", "ChannelType": "guilds"}
+    Data = {"Offset": 0, "Messages": [], "QueryURL": "", "ChannelType": "channels"}
 
     # Begin querying
     try:
@@ -165,7 +165,7 @@ def QueryChannelMessages(ID):
 
             Query = MainSession.get(Data["QueryURL"])
 
-            Debug(str(Query.status_code) + "\n" + Query.text + "\n" + Query.url)
+            Debug(str(Query.status_code) + "\n" + Query.text + Query.url)
 
             match Query.status_code:
                 case 200:
@@ -173,21 +173,19 @@ def QueryChannelMessages(ID):
                     Data["Messages"].extend(Query.json()["messages"])
 
                     # If we're done
-                    if len(Data["Messages"]) == Query.json()["total_results"]:
+                    if len(Query.json()["messages"]) < 25:
                         raise BreakNestedLoop
                     else:
                         Data["Offset"] += 25
                 case 202:  # Channel needs to index
-                    Debug("Waiting 5 seconds for channel to index.")
-                    time.sleep(5)
+                    RetryAfter = Query.json()["retry_after"]
+                    time.sleep(RetryAfter)
                 case 404:  # Change type
 
-                    if Data["ChannelType"] == "channels":
+                    if Data["ChannelType"] == "guilds":
                         raise BreakNestedLoop
                     else:
-                        Data[
-                            "ChannelType"
-                        ] = "channels"  # Group DMs are initially marked as SERVERS
+                        Data["ChannelType"] = "guilds"
                 case 403:  # No access anymore
                     raise BreakNestedLoop
 
