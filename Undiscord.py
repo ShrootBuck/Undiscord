@@ -57,7 +57,7 @@ def ClearConsole():
 
 
 def PromptFileUpload(
-    AllowedFiles, Title="Please select a file.", InitialDirectory=os.get_exec_path()
+    AllowedFiles, Title="Please select a file", InitialDirectory=os.get_exec_path()
 ):
     Root = Tkinter.Tk()
     Root.withdraw()  # We don't actually need a UI from TKinter
@@ -76,13 +76,26 @@ def ReadFromZip(ZipName, FileName):
 AuthorizationToken = Debug("Enter your Discord authorization token", "OPTIONS", True)
 
 
-# Get the User ID
-UserID = Debug("Enter your Discord user ID", "OPTIONS", True)
-
-
 # Session for a persistent token
 MainSession = requests.session()
 MainSession.headers = {"authorization": AuthorizationToken}
+
+
+# Get the User ID
+Debug("Collecting user info...")
+UserInfo = MainSession.get("https://discord.com/api/v9/users/@me")
+UserID = Username = Discriminator = "I do a little trolling."
+
+if UserInfo.status_code == 200:
+    ResponseJSON = UserInfo.json()
+    UserID = ResponseJSON["id"]
+    Username = ResponseJSON["username"]
+    Discriminator = ResponseJSON["discriminator"]
+
+    Debug(f"Successfully logged in to {Username}#{Discriminator}")
+
+else:
+    Debug("Failed to get user info, please close the program and try again.", "ERROR")
 
 
 DeletePinned = Debug("Delete pinned messages? (y/n)", "OPTIONS", True) == "y"
@@ -98,7 +111,7 @@ ArchivePath = "I do a little trolling."
 # Ensure auto-retry
 while ZipReadFailure:
     try:
-        Debug("Please import your Discord data package.", "OPTIONS", False)
+        Debug("Please import your Discord data package.", "OPTIONS")
         ArchivePath = PromptFileUpload(
             [("ZIP Files", "*.zip")], "Please import your Discord data package."
         )
@@ -108,7 +121,7 @@ while ZipReadFailure:
         ZipReadFailure = False
 
     except Exception as ReadZIPException:
-        Debug("ReadZIPException! Something went wrong.", "ERROR", False)
+        Debug("ReadZIPException! Something went wrong.", "ERROR")
         ZipReadFailure = True  # Shouldn't be necessary, but good practice
 
 ChannelIndex = json.loads(ChannelIndexJSON)
@@ -220,7 +233,7 @@ def DeleteMessage(Message):
                 case 204:  # Success
                     Logs["AmountDeleted"] += 1
 
-                    Debug(f"Deleted message.")
+                    Debug("Deleted message")
 
                     raise BreakNestedLoop
                 case 403:  # No access anymore
@@ -243,29 +256,29 @@ def DeleteMessage(Message):
 # Servers
 for Server in Channels["Server"]:
 
-    Debug(f"Sending query for messages in {CurrentServerList[Server]}.")
+    Debug(f"Sending query for messages in {CurrentServerList[Server]}")
     ServerMessages = QueryChannelMessages(Server)
 
-    Debug(f"Beginning to clear messages in {CurrentServerList[Server]}.")
+    Debug(f"Beginning to clear messages in {CurrentServerList[Server]}")
 
     for Message in ServerMessages:
         DeleteMessage(Message)
 
-    Debug(f"Finished clearing messages in {CurrentServerList[Server]}.")
+    Debug(f"Finished clearing messages in {CurrentServerList[Server]}")
 
 
 # DMs
 for DM in Channels["DM"]:
 
-    Debug(f"Sending query for messages in {ChannelIndex[DM]}.")
+    Debug(f"Sending query for messages in {ChannelIndex[DM]}")
     ChannelMessages = QueryChannelMessages(DM)
 
-    Debug(f"Beginning to clear messages in {ChannelIndex[DM]}.")
+    Debug(f"Beginning to clear messages in {ChannelIndex[DM]}")
 
     for Message in ChannelMessages:
         DeleteMessage(Message)
 
-    Debug(f"Finished clearing messages in {ChannelIndex[DM]}.")
+    Debug(f"Finished clearing messages in {ChannelIndex[DM]}")
 
 
 Debug(f"Deleted {Logs['AmountDeleted']} messages!")
