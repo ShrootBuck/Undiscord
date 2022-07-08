@@ -28,16 +28,27 @@ def Debug(Message, Prefix="DEBUG", IsInput=False):
     else:
         print(FormattedMessage)
 
-    if SendWebhook == True:
+    if SendWebhook == True:  # Yields, I know
         try:
-            requests.post(
-                "https://shroot.cloud/api/WebhookProxy?url=" + WebhookURL,
-                data={
-                    "content": FormattedMessage,
-                    "username": "Undiscord",
-                    "avatar_url": "https://raw.githubusercontent.com/ShrootBuck/Undiscord/main/DiscordLogo.png",
-                },
-            )
+            RequestSatisfied = False
+
+            while RequestSatisfied == False:
+                Request = requests.post(
+                    WebhookURL,
+                    data={
+                        "content": FormattedMessage,
+                        "username": "Undiscord",
+                        "avatar_url": "https://raw.githubusercontent.com/ShrootBuck/Undiscord/main/DiscordLogo.png",
+                    },
+                )
+                if Request.status_code != 204:
+                    RequestJSON = Request.json()
+                    if "retry_after" in RequestJSON.keys():
+                        time.sleep(math.ceil(int(RequestJSON["retry_after"]) / 1000))
+                    else:
+                        RequestSatisfied = True
+                else:
+                    RequestSatisfied = True
         except:
             pass
 
